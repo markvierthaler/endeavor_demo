@@ -17,9 +17,11 @@
             </div>
        </div>
        <div v-else class='main'>
-            <div v-bind:key="item.id" v-for="item in category.items">
+            <div v-bind:key="item.id" v-for="(item, index) in category.items">
                 <div v-if="index < listLimit" class='row'>
+                 <div class='column' style='width:100%'>
                 <Item v-bind:item=item />
+                </div>
                 </div>
             </div>
        </div>
