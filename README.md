@@ -1,4 +1,4 @@
-# sandbox
+# Endeavor Demo
 
 ## Project setup
 ```
