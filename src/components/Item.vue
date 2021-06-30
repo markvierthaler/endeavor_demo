@@ -13,25 +13,31 @@
 </template>
 
 <script>
+import moment from "moment";
+moment.locale('en')
 
 export default {
     name: "Item",
     components: {
-
     },
     props: {
         item: Object
     },
     methods: {
-        parseMonth(value) {
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            if(value) {
-                return monthNames[value.getMonth()];
+        parseMonth(date) {
+            if(date) {
+                
+                // moment.js library
+                return moment(date, 'YYY-MM-DD').format('MMM')
+                
+                // can also use ECMAScript
+                // return date.toLocaleString('default',{month:'short'})
+                
             }
         },
-        parseDay(value) {
-            if(value) {
-                return value.getDate();
+        parseDay(date) {
+            if(date) {
+                return date.getDate();
             }
         }
     }
@@ -45,6 +51,7 @@ export default {
         background: #fff;
         padding:20px 20px;
         margin:40px;
+        height:100%;
     }
     .item_title {
         font-size:18pt;
