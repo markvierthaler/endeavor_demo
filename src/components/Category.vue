@@ -1,23 +1,65 @@
 <template>
-    <div :key="colCount" v-bind:style="{width: componentWidth + 'px'}">
+    <div :key="componentKey" v-bind:style="{width: componentWidth + 'px'}">
        <CategoryHeader 
             v-bind:label="category.label" 
             v-bind:categoryUrl="category.categoryUrl" 
             />
-        <div v-if="colCount==2" class='main'>
+        <!-- 3 Columns -->
+        <div v-if="colCount==3" class='main'>
             <div v-bind:key="item.id" v-for="(item, index) in category.items">
-                <div v-if="index < listLimit && index % 2 == 0" class='row'>
+                <!-- 3 Per Row -->
+                <div v-if="index < listLimit && index % 3 == 0 && index+2 < category.items.length && index+2 < listLimit" class='row'>
+                    <div class='column-3'>
+                        <Item v-bind:item=item />
+                    </div>
+                    <div class='column-3'>
+                        <Item v-bind:item=category.items[index+1] />
+                    </div>    
+                    <div  class='column-3'>
+                        <Item v-bind:item=category.items[index+2] />
+                    </div>
+                </div>
+                <!-- 2 Per Row -->
+                <div v-else-if="index < listLimit && index % 3 == 0 && index+1 < category.items.length && index+1 < listLimit" class='row'>
                     <div class='column-2'>
-                    <Item v-bind:item=item />
+                        <Item v-bind:item=item />
                     </div>
-                    <div class='column-2' v-if='index+1 < category.items.length && index+1 < listLimit'>
-                    <Item v-bind:item=category.items[index+1] />
+                    <div class='column-2'>
+                        <Item v-bind:item=category.items[index+1] />
+                    </div>    
+                </div>
+                <!-- 1 Per Row -->
+                <div v-else-if="index < listLimit && index % 3 == 0 && index < category.items.length && index < listLimit" class='row'>
+                    <div class='column-1'>
+                        <Item v-bind:item=item />
                     </div>
-                </div>    
+                </div>
             </div>
         </div>
-        <div v-else class='main'>
+        <!-- 2 Columns -->
+        <div v-else-if="colCount==2" class='main'>
             <div v-bind:key="item.id" v-for="(item, index) in category.items">
+                <!-- 2 Per Row -->
+                <div v-if="index < listLimit && index % 2 == 0 && index+1 < category.items.length && index+1 < listLimit" class='row'>
+                    <div class='column-2'>
+                        <Item v-bind:item=item />
+                    </div>
+                    <div class='column-2'>
+                        <Item v-bind:item=category.items[index+1] />
+                    </div>    
+                </div>
+                <!-- 1 Per Row -->
+                <div v-else-if="index < listLimit && index % 2 == 0 && index < category.items.length && index < listLimit" class='row'>
+                    <div class='column-1'>
+                        <Item v-bind:item=item />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 1 Column -->
+        <div v-else-if="colCount==1" class='main'>
+            <div v-bind:key="item.id" v-for="(item, index) in category.items">
+                <!-- 1 Per Row -->
                 <div v-if="index < listLimit" class='row'>
                     <div class='column-1'>
                     <Item v-bind:item=item />
@@ -26,7 +68,7 @@
             </div>
         </div>
         <div style='text-align:center;border:1px solid #bbb; padding:10px;margin:10px;'>
-            Breakpoint: {{breakpoint}} | <label :for="inputCurrentWidth">Component Width:</label><input :id="inputCurrentWidth"  v-model="userInputWidth" @keyup=updateCols> | <label :for="inputListLimit">Display #:</label><input :id="inputListLimit" v-model="listLimit">
+            Breakpoint - M: {{breakpointM}} | Breakpoint - L: {{breakpointL}} | <label :for="inputCurrentWidth">Component Width:</label><input :id="inputCurrentWidth"  v-model="userInputWidth" @keyup=onChangeWidthManually> | <label :for="inputListLimit">Display #:</label><input :id="inputListLimit" v-model="listLimit">
         </div>
     </div>
     
@@ -43,9 +85,10 @@ export default {
         return {
             listLimit: 4,
             colCount:2,
-            componentWidth:900,
+            componentWidth:0,
             userInputWidth:900,
-            breakpoint:800,
+            breakpointM:800,
+            breakpointL:1200,
             componentKey:0
         };
     },
@@ -57,29 +100,62 @@ export default {
         category: Object
     },
     methods: {
-        updateCols: _.debounce(function(){
+        setScreenSize() {
+            this.componentWidth = document.body.clientWidth;
+            this.updateCols(); 
+            this.matchHeight();       
+            this.componentKey++;
+        },
+        onResizeEventHandler: _.debounce(function(){
+            this.setScreenSize();
+        },5),
+        onChangeWidthManually: _.debounce(function(){
             if(isNaN(this.userInputWidth) || this.userInputWidth<300) {    
                 this.userInputWidth = 900;        
             }   
-            this.userInputWidth >= this.breakpoint ? this.colCount = 2 : this.colCount = 1;
             this.componentWidth = this.userInputWidth;
+            this.updateCols(); 
+            this.matchHeight();      
+            this.componentKey++;
         }, 1000),
+        updateCols: _.debounce(function(){
+            if(isNaN(this.componentWidth) || this.componentWidth<300) {    
+                this.componentWidth = 900;        
+            }   
+            switch(true) {
+                case this.componentWidth>=this.breakpointL:
+                    this.colCount = 3
+                    break;
+                case this.componentWidth>=this.breakpointM:
+                    this.colCount = 2
+                    break;
+                default:
+                    this.colCount = 1
+            }
+            this.userInputWidth = this.componentWidth;
+        }, 1000),
+        
         matchHeight() {
             var rows = document.getElementsByClassName("row");   
             rows.forEach((row) => {
                 var boxes =  row.getElementsByClassName("item_box");
                 if(boxes.length>1) {
-                    if(boxes[0].clientHeight > boxes[1].clientHeight) {
-                        boxes[1].style.height  = window.getComputedStyle(boxes[0],"").getPropertyValue("height")
-                    } else if(boxes[0].clientHeight<boxes[1].clientHeight) {
-                        boxes[0].style.height  = window.getComputedStyle(boxes[1],"").getPropertyValue("height")
+                    let boxMaxHeight = 0;
+                    for(let i=0; i <boxes.length; i++){
+                        boxMaxHeight = (parseInt(window.getComputedStyle(boxes[i],"").getPropertyValue("height")) > boxMaxHeight) ? parseInt(window.getComputedStyle(boxes[i],"").getPropertyValue("height")) : boxMaxHeight;
+                    }    
+                    for(let i=0; i <boxes.length; i++){
+                        boxes[i].style.height = boxMaxHeight+"px";
                     }
                 }
            })
         }
-    },  
+    },
+    created() {
+        window.addEventListener("resize", this.onResizeEventHandler);
+    },
     mounted() {
-        this.matchHeight();  
+        this.setScreenSize();
     },      
     updated() {
         this.matchHeight();       
@@ -117,6 +193,12 @@ export default {
         overflow:hidden;
         float: left;
         width: 50%;
+    }
+
+    .column-3 {
+        overflow:hidden;
+        float: left;
+        width: 33%;
     }
 
      /* Clear floats after the columns */
